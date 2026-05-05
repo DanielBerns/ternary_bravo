@@ -2,6 +2,7 @@ import sys
 import pickle
 import numpy as np
 import re
+from pathlib import Path
 from model import DeepTernaryNetworkMHot
 
 def clean_text(text):
@@ -9,7 +10,11 @@ def clean_text(text):
     text = re.sub(r'[^\w\s]', '', text)
     return text.split()
 
-def main(input_file, context_size=3):
+def main(input_file_str, dataset_dir_str, weights_dir_str, context_size=3):
+    input_file = Path(input_file_str).expanduser()
+    dataset_dir = Path(dataset_dir_str).expanduser()
+    weights_dir = Path(weights_dir_str).expanduser()
+
     with open(input_file, 'r', encoding='utf-8') as f:
         words = clean_text(f.read())
 
@@ -36,17 +41,19 @@ def main(input_file, context_size=3):
         "context_size": context_size
     }
 
-    with open("dataset.pkl", "wb") as f:
+    dataset_file = dataset_dir / "dataset.pkl"
+    with open(dataset_file, "wb") as f:
         pickle.dump(dataset, f)
 
     # Initialize Model [Input Vocab -> 64 -> 64 -> Output Vocab]
     model = DeepTernaryNetworkMHot(vocab_size, [64, 64], vocab_size)
-    model.save_weights("weights.pkl")
+    weights_file = weights_dir / "weights.pkl"
+    model.save_weights(weights_file)
     
     print(f"Setup complete. Vocab size: {vocab_size}. Training samples: {len(X[:split_idx])}.")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python setup_script.py <text_file>")
+    if len(sys.argv) < 3:
+        print("Usage: uv run  src/ternary_bravo/setup_script.py <text_file> <dataset_dir> <weights_dir>")
     else:
-        main(sys.argv[1])
+        main(sys.argv[1], sys.argv[2], sys.argv[3])

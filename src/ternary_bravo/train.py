@@ -1,17 +1,25 @@
+import sys
+from pathlib import Path
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from model import DeepTernaryNetworkMHot
 
-def main(epochs=50, lr=0.01):
-    with open("dataset.pkl", "rb") as f:
+
+def main(dataset_dir_str, weights_dir_str, epochs=50, lr=0.01):
+    dataset_dir = Path(dataset_dir_str).expanduser()
+    weights_dir = Path(weights_dir_str).expanduser()
+    dataset_file = dataset_dir / "dataset.pkl"
+    weights_file = weights_dir / "weights.pkl"
+
+    with open(dataset_file, "rb") as f:
         data = pickle.load(f)
         
     vocab_size = len(data["word_to_id"])
     
     # Reconstruct model and load weights
     model = DeepTernaryNetworkMHot(vocab_size, [64, 64], vocab_size)
-    model.load_weights("weights.pkl")
+    model.load_weights(weights_file)
 
     train_losses, test_accuracies = [], []
 
@@ -43,7 +51,7 @@ def main(epochs=50, lr=0.01):
             print(f"Epoch {epoch+1}/{epochs} - Loss: {train_losses[-1]:.4f} - Test Acc: {accuracy:.4f}")
 
     # Save updated weights
-    model.save_weights("weights.pkl")
+    model.save_weights(weights_file)
     print("Training complete. Weights saved.")
 
     # Generate Performance Graphics
@@ -62,4 +70,7 @@ def main(epochs=50, lr=0.01):
     print("Saved training_metrics.png")
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 3:
+        print("Usage: uv run src/ternary_bravo/train.py <dataset_dir> <weights_dir>")
+    else:
+        main(sys.argv[1], sys.argv[2])
